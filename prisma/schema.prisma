@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  YANDEX
+}
+
+model User {
+  id        String    @id @unique @default(uuid())
+  email     String    @unique
+  password  String?
+  roles     Role[]
+  provider  Provider?
+  tokens    Token[]
+  cart      Cart?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Token {
+  token     String   @unique
+  exp       DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  userAgent String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tokens")
+}
+
+model Cart {
+  id String @id @unique @default(uuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  cartProducts CartProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cart")
+}
+
+model CartProduct {
+  id        String  @id @unique @default(uuid())
+  cart      Cart    @relation(fields: [cartId], references: [userId])
+  cartId    String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cart_products")
+}
+
+model Product {
+  id       String @id @unique @default(uuid())
+  name     String
+  slug     String @unique
+  price    Float
+  discount Float  @default(0)
+  stock    Int    @default(0)
+
+  images ProductImage[]
+
+  cartItems CartProduct[]
+
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model ProductImage {
+  id  String @id @unique @default(uuid())
+  url String
+
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("product_images")
+}
+
+model Category {
+  id          String  @id @unique @default(uuid())
+  name        String
+  description String?
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+enum Role {
+  USER
+  ADMIN
+  EMPLOYEE
+}
